@@ -1,7 +1,29 @@
-Progress: 10% &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; C Files left: ~24 out of 35
-# Mario Kart 64
+# Mario Kart 64 Multiplayer
 
-This repo contains a work-in-progress decompilation of Mario Kart 64 (U). The project pursues historical and educational elements within the game found via taking it apart and putting it back together. Inspiration to do so not only emanates from the game's hardware and technology but also its immensely positive effects on the cultures and families of nearly every nationality. See [progress](#Progress) for more information.
+MP is currently not functional. PR's accepted. Please open an issue if a bug is found.
+Functionally equivallent code is accepted. All code must be inspired from legitimate sources and analysis of the game.
+
+Requires:
+https://github.com/Henrik0x7F/lan64/tree/master/n64
+in
+src/network/
+
+Current progress:  
+- Supports up to eight human or computer players in single player GP mode.
+- Game logic allows all eight players to cross finish line without failing.  
+- Eighth player is forced to complete the race by turning into a CPU.  
+
+Todo:  
+- Skip certain menu elements  
+- Pause at end of races until everyone is ready to continue  
+- Possibly edit ending sequence but it should be okay.  
+- Make race end regardless of where the eighth player is on the map.  
+- Prevent character scrolling banner from popping up until all players have finished.  
+
+Extras:  
+- Possibly balance kart stats
+
+This repo contains a work-in-progress decompilation of Mario Kart 64 (U). The project pursues historical and educational elements found within the game via taking it apart and putting it back together. Inspiration to do so not only emanates from the game's hardware and technology but also its immensely positive effects on the cultures and families of nearly every nationality. See [progress](#Progress) for more information.
 
 It builds the following ROM:
 
@@ -17,8 +39,6 @@ The build system has the following package requirements:
     python3 >= 3.6
     libaudiofile
     qemu-irix
-
-To add submodules run `git submodule update --init --recursive` after cloning.
 
 Debian / Ubuntu
 ```
@@ -41,9 +61,7 @@ Run the following commands after pulling:
 
 ## Progress
 
-The source is in a 'shiftable' state that may allow modding but glitches may exist. Keep in-mind the code-base will alter significantly overtime. Feedback that raises awareness of new shift issues are welcome as a comment on issue #6. Note that some segments must be moved manually to prevent them colliding into each other.  
-
-Some menu textures are compressed using a format called tkmk00. A byte-matching compressor/decompressor does not yet exist.   
+The Mario Kart 64 code-base contains thirty-six C files, around twenty-eight files remain for decompilation. This does not account for other kinds of files such as data. The source is in an experimental 'shiftable' state that may allow modding but glitches and crashes are prevalent and the code-base will alter significantly overtime. As such, feedback that raises awareness of new issues are welcome. Please review issue #1 prior to issue submission to avoid duplicates.
 
 ## Project Structure
 	
@@ -60,7 +78,6 @@ Some menu textures are compressed using a format called tkmk00. A byte-matching 
 	├── music: sequences
 	├── src: C source code for the game
 	│   └── audio: sample tables
-	│   └── os: libultra
 	├── textures: texture data, bitmaps
 	│   ├── raw: raw textures
   	│   └── standalone: whole textures
