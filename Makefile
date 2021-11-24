@@ -4,6 +4,10 @@
 
 default: all
 
+# Build multiplayer
+MP ?= 1
+
+
 ### Build Options ###
 
 # These options can either be changed by modifying the makefile, or
@@ -15,7 +19,7 @@ VERSION ?= us
 COMPARE ?= 1
 
 ifeq ($(VERSION),us)
-  VERSION_CFLAGS := -DVERSION_US
+  VERSION_CFLAGS := -DVERSION_US -DMP=1
   VERSION_ASFLAGS := --defsym VERSION_US=1
   TARGET := mk64.us
 endif

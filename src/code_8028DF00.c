@@ -130,6 +130,12 @@ u16 D_802BA048;
 
 //extern s32 D_8015F8F2;
 
+#ifdef MP
+
+s16 playerFinished = 0;
+s16 raceComplete = 3;
+#endif
+
 void func_8028DF00(void) {
     struct Controller *controllers = &gControllers[0];
     s32 i;
@@ -233,6 +239,10 @@ void func_8028E298(void) {
 void func_8028E3A0(void) {
 
     if (D_80150120) {
+        #ifdef MP
+            raceComplete = 3;
+            playerFinished = 0;
+        #endif
 
         if (gCourseSelection == 3) {
             D_80150124 = 5;
@@ -572,7 +582,7 @@ void func_8028EDA8(void) {
     if (D_800DC510 == 2) {
         D_800DC510 = 3;
     }
-        
+
     for (i = 0; i < 8; i++) {
 
         if ((gPlayers[i].unk_000 & 0x8000) == 0) {
@@ -583,7 +593,6 @@ void func_8028EDA8(void) {
             gPlayers[i].unk_000 ^= 0x2000;
         }    
     }
-    
 }
 
 f32 func_8028EE8C(s32 arg0) {
@@ -603,29 +612,155 @@ void func_8028EF28(void) {
     s16 currentPosition;
     s32 i;
 
-    for(i = 0; i < 8; i++)
-    {
+    for (i = 0; i < 8; i ++) {
         ply = &gPlayers[i];
-
+        
+        // If player exists?
         if ((gPlayers[i].unk_000 & 0x8000) == 0) {
             continue;
         }
 
+        // Set currentLap for each player.
         if (lapCount[i] < gPlayers[i].unk_008) {
             gPlayers[i].unk_008--;
         } else if (lapCount[i] > gPlayers[i].unk_008) {
-            gPlayers[i].unk_008++; 
+            gPlayers[i].unk_008++;
+        }
 
-            if ((gPlayers[i].unk_000 & 0x4000) != 0) {
+        // Player finished the race
+        if (gPlayers[i].unk_008 == 3) {
+
+            switch(gModeSelection) {
+                case 0:
+                    mp_gp_win(ply);
+                    break;
+                case 2:
+                    mp_vs_win(ply);
+                    break;
+
+            }
+        }
+
+
+    }
+}
+
+
+void mp_gp_win(Player *ply) {
+
+    // if local player is human and not finished
+    if ((i == 0) && (gPlayers[0].unk_000 & 0x4000) && !playerFinished) {
+        playerFinished = 1;
+        // Set to AI controlled
+        gPlayers[0].unk_000 |= 0x1000;
+        // Finishline sound
+        func_800CA118((u8)0);
+        if ((D_802BA032 & 0x8000) == 0) {
+                D_802BA032 |= 0x8000;
+        }
+    }
+
+    // Race completed
+    if (currentPosition == 6) {
+        D_80150120 = 1;
+        raceComplete = 4;
+        /**
+         * Force player 1 to be done race if in eighth.
+         * @bug Eighth player wins if uncomment below.
+        **/
+        if (gPlayers[0].unk_004 == 7 && playerFinished == 0) {
+            playerFinished = 1;
+            // Stop timer
+            //func_8028EEF0(0);
+            // Set to computer
+            // Todo: Set to silent computer.
+            gPlayers[0].unk_000 |= 0x1000;
+        }
+    }
+    // Continue racing or done.
+    D_800DC510 = raceComplete;
+
+}
+
+void mp_vs_win(Player *ply) {
+
+}
+
+
+
+
+    Player *ply;
+    s16 currentPosition;
+    s32 i;
+
+    for(i = 0; i < 8; i++)
+    {
+        ply = &gPlayers[i];
+
+        // Check if struct exists?
+        if ((gPlayers[i].unk_000 & 0x8000) == 0) {
+            continue;
+        }
+
+        // Sets each players current lap?
+        if (lapCount[i] < gPlayers[i].unk_008) {
+            gPlayers[i].unk_008--;
+        } else if (lapCount[i] > gPlayers[i].unk_008) {
+            gPlayers[i].unk_008++;
+        }
+
+            // if Human
+            //if ((gPlayers[i].unk_000 & 0x4000) != 0) {
+
+                // if cross finishline
                 if (gPlayers[i].unk_008 == 3) {
+                    // Stop timer
                     func_8028EEF0(i);
 
+                    // Get player ranking
                     currentPosition = gPlayers[i].unk_004;
+                    #ifndef MP
                     gPlayers[i].unk_000 |= 0x1000;
+                    #endif
 
+                    #ifdef MP
+
+                    // if local player is human and not finished
+                    if ((i == 0) && (gPlayers[0].unk_000 & 0x4000) && !playerFinished) {
+                        playerFinished = 1;
+                        // Set to AI controlled
+                        gPlayers[0].unk_000 |= 0x1000;
+                        // Finishline sound
+                        func_800CA118((u8)0);
+                        if ((D_802BA032 & 0x8000) == 0) {
+                                D_802BA032 |= 0x8000;
+                        }
+                    }
+
+                    // Race completed
+                    if (currentPosition == 6) {
+                        D_80150120 = 1;
+                        raceComplete = 4;
+                        /**
+                         * Force player 1 to be done race if in eighth.
+                         * @bug Eighth player wins if uncomment below.
+                        **/
+                        if (gPlayers[0].unk_004 == 7 && playerFinished == 0) {
+                            playerFinished = 1;
+                            // Stop timer
+                            //func_8028EEF0(0);
+                            // Set to computer
+                            // Todo: Set to silent computer.
+                            gPlayers[0].unk_000 |= 0x1000;
+                        }
+                    }
+                    // Continue racing or done.
+                    D_800DC510 = raceComplete;
+                    #else
                     if (currentPosition < 4) {
                         D_80150120 = 1;
                     }
+                    
 
                     func_800CA118((u8)i);
                     if ((D_802BA032 & 0x8000) == 0) {
@@ -700,7 +835,8 @@ void func_8028EF28(void) {
                         }
 
                     }
-
+                    #endif
+                // Second lap logic
                 } else if (gPlayers[i].unk_008 == 2) {
                     if ((gPlayers[i].unk_000 & 0x100) != 0) {
                         return;
@@ -710,18 +846,30 @@ void func_8028EF28(void) {
                         func_800CA49C((u8)i);
                     }
                 }
-            } else if (gPlayers[i].unk_008 == 3) {
-                func_8028EEF0(i);
-                if (gModeSelection == 1) {
-                    func_80005AE8(ply);
-                }
-            }
-        } 
-    }
-    if ((D_802BA048 != 0) && (D_802BA048 != 100)) {
-        D_802BA048 = 100;
-        func_800074D4();
-    }
+                /*
+                
+                else if (gPlayers[i].unk_008 == 2) {
+                    if ((gPlayers[i].unk_000 & 0x100) != 0) {
+                        return;
+                    }
+                    if ((D_802BA032 & 0x4000) == 0) {
+                        D_802BA032 |= 0x4000;
+                        func_800CA49C((u8)i);
+                    }
+                }*/
+                //#endif
+            //} //else if (gPlayers[i].unk_008 == 3) {
+               // func_8028EEF0(i);
+               // if (gModeSelection == 1) {
+                 //   func_80005AE8(ply);
+               // }
+        }
+        //} 
+    
+    //if ((D_802BA048 != 0) && (D_802BA048 != 100)) {
+    //    D_802BA048 = 100;
+    //    func_800074D4();
+    //}
 }
 
 void func_8028F3E8(void) {

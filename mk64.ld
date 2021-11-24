@@ -227,6 +227,9 @@ SECTIONS
       BUILD_DIR/src/code_8001C4D0.o(.data);
       BUILD_DIR/data/data_0DD0A0_1_1.o(.data);
       BUILD_DIR/src/kart_attributes.inc.o(.data);
+/* MP */
+      BUILD_DIR/src/code_8028DF00.o(.data);
+
       BUILD_DIR/data/data_0DD0A0_2.o(.rodata);
       BUILD_DIR/src/os/osInitialize.o(.data*);
       BUILD_DIR/src/os/osCreateViManager.o(.data);
