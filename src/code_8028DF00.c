@@ -4,6 +4,7 @@
 #include <common_structs.h>
 #include <config.h>
 #include <defines.h>
+#define MP 1
 
 extern Player *D_800DC4E0;
 extern Player *D_800DC4E4;
@@ -129,9 +130,7 @@ s16 D_802BA040[4];
 u16 D_802BA048;
 
 #ifdef MP
-
-s16 playerFinished = 0;
-s16 raceComplete = 3;
+//s16 raceComplete = 3;
 #endif
 
 void func_8028DF00(void) {
@@ -238,8 +237,7 @@ void func_8028E3A0(void) {
 
     if (D_80150120) {
         #ifdef MP
-            raceComplete = 3;
-            playerFinished = 0;
+            //raceComplete = 3;
         #endif
 
         if (gCourseSelection == COURSE_BANSHEE_BOARDWALK) {
@@ -605,6 +603,9 @@ f32 func_8028EE8C(s32 arg0) {
 void func_8028EEF0(s32 i) {
     gPlayers[i].unk_000 |= PLAYER_CINEMATIC_MODE;
 }
+void mp_gp_win(Player*, s16, s32);
+void mp_vs_win(Player*, s16, s32);
+
 
 void func_8028EF28(void) {
     Player *ply;
@@ -615,7 +616,7 @@ void func_8028EF28(void) {
         ply = &gPlayers[i];
         
         // If player exists?
-        if ((gPlayers[i].unk_000 & 0x8000) == 0) {
+        if ((gPlayers[i].unk_000 & PLAYER_EXISTS) == 0) {
             continue;
         }
 
@@ -626,33 +627,65 @@ void func_8028EF28(void) {
             gPlayers[i].unk_008++;
         }
 
+        currentPosition = gPlayers[i].unk_004;
+
         // Player finished the race
         if (gPlayers[i].unk_008 == 3) {
 
+            if ((gPlayers[i].unk_000 & PLAYER_CPU) && ((gPlayers[i].unk_000 & PLAYER_HUMAN) == 0)) {
+                
+                if (currentPosition == 6) {
+                    //gPlayers[0].unk_000 = 0;
+                    D_80150120 = 1;
+                    D_800DC510 = 5;
+                    func_8028E678();
+                } else {
+                    func_8028EEF0(i);
+                }
+                continue;
+            }
+            
+
             switch(gModeSelection) {
-                case 0:
-                    mp_gp_win(ply);
+                case GRAND_PRIX:
+                    mp_gp_win(ply, i, currentPosition);
                     break;
-                case 2:
-                    mp_vs_win(ply);
+                case VERSUS:
+                    mp_vs_win(ply, i, currentPosition);
                     break;
 
             }
+        } else if (gPlayers[i].unk_008 == 2) {
+            if ((gPlayers[i].unk_000 & PLAYER_INVISIBLE_OR_BOMB) != 0) {
+                return;
+            }
+            // Activate final lap lakitu notification.
+            if ((D_802BA032 & 0x4000) == 0) {
+                D_802BA032 |= 0x4000;
+                func_800CA49C((u8)i);
+            }
+        }
+    }
+    
+} 
+
+void mp_gp_win(Player *ply, s16 currentPosition, s32 i) {
+
+    // if local player is human
+    if ((i == 0) && (gPlayers[0].unk_000 & PLAYER_HUMAN)) {
+        // Set to AI controlled
+        gPlayers[0].unk_000 |= PLAYER_CPU;
+        //func_8028EEF0(i);
+
+        if (currentPosition == 7) {
+            D_80150120 = 1;
+            D_800DC510 = 5;
+            func_8028E678();
+        } else {
+            D_800DC510 = 4; 
         }
 
-
-    }
-}
-
-
-void mp_gp_win(Player *ply) {
-
-    // if local player is human and not finished
-    if ((i == 0) && (gPlayers[0].unk_000 & 0x4000) && !playerFinished) {
-        playerFinished = 1;
-        // Set to AI controlled
-        gPlayers[0].unk_000 |= 0x1000;
-        // Finishline sound
+        // Finished race sound
         func_800CA118((u8)0);
         if ((D_802BA032 & 0x8000) == 0) {
                 D_802BA032 |= 0x8000;
@@ -660,183 +693,31 @@ void mp_gp_win(Player *ply) {
     }
 
     // Race completed
-    if (currentPosition == 6) {
-        D_80150120 = 1;
-        raceComplete = 4;
+    // If in seventh
+    // todo: Make game end despite eighth player not finishing.
+    //if (currentPosition == 6) {
         /**
          * Force player 1 to be done race if in eighth.
          * @bug Eighth player wins if uncomment below.
         **/
-        if (gPlayers[0].unk_004 == 7 && playerFinished == 0) {
-            playerFinished = 1;
+        //if (currentPosition == 7) {
+            
             // Stop timer
             //func_8028EEF0(0);
             // Set to computer
             // Todo: Set to silent computer.
-            gPlayers[0].unk_000 |= 0x1000;
-        }
-    }
+            //gPlayers[i].unk_000 |= PLAYER_CPU;
+        //}
+        //return;
+    //}
     // Continue racing or done.
-    D_800DC510 = raceComplete;
-
+    if (D_800DC510 < 4) {
+        D_800DC510 = 3;
+    }
 }
 
-void mp_vs_win(Player *ply) {
-
-}
-
-
-
-
-    Player *ply;
-    s16 currentPosition;
-    s32 i;
-
-    for(i = 0; i < 8; i++)
-    {
-        ply = &gPlayers[i];
-
-        if ((gPlayers[i].unk_000 & PLAYER_EXISTS) == 0) {
-            continue;
-        }
-
-        // Sets each players current lap?
-        if (lapCount[i] < gPlayers[i].unk_008) {
-            gPlayers[i].unk_008--;
-        } else if (lapCount[i] > gPlayers[i].unk_008) {
-            gPlayers[i].unk_008++;
-        }
-
-            if ((gPlayers[i].unk_000 & PLAYER_HUMAN) != 0) {
-                if (gPlayers[i].unk_008 == 3) {
-                    // Stop timer
-                    func_8028EEF0(i);
-
-                    // Get player ranking
-                    currentPosition = gPlayers[i].unk_004;
-                    gPlayers[i].unk_000 |= PLAYER_CPU;
-
-                    // Race completed
-                    if (currentPosition == 6) {
-                        D_80150120 = 1;
-                        raceComplete = 4;
-                        /**
-                         * Force player 1 to be done race if in eighth.
-                         * @bug Eighth player wins if uncomment below.
-                        **/
-                        if (gPlayers[0].unk_004 == 7 && playerFinished == 0) {
-                            playerFinished = 1;
-                            // Stop timer
-                            //func_8028EEF0(0);
-                            // Set to computer
-                            // Todo: Set to silent computer.
-                            gPlayers[0].unk_000 |= 0x1000;
-                        }
-                    }
-                    // Continue racing or done.
-                    D_800DC510 = raceComplete;
-                    #else
-                    if (currentPosition < 4) {
-                        D_80150120 = 1;
-                    }
-                    
-
-                    func_800CA118((u8)i);
-                    if ((D_802BA032 & PLAYER_EXISTS) == 0) {
-                        D_802BA032 |= PLAYER_EXISTS;
-                    }
-                    
-
-                    if (gModeSelection == GRAND_PRIX && gPlayerCountSelection1 == 2 && D_802BA048 == 0) {
-                        D_802BA048 = 1;
-                    }
-                    if ((gPlayers[i].unk_000 & PLAYER_INVISIBLE_OR_BOMB) == 0) {
-                        D_800DC510 = 4;
-                    }
-                    if (gModeSelection == TIME_TRIALS) {
-                        func_80005AE8(ply);
-                    }
-
-
-                    if (gModeSelection == VERSUS) {
-                        D_802BA038 = 180;
-                        if (currentPosition == 0) {
-                            D_800DC5E8 = i;
-                        }
-                        switch(gPlayerCountSelection1) {
-                            case 2:
-                                if (currentPosition == 0) {
-                                    *(D_8015F8B8 + i) += 1;
-                                }
-                                if (*(D_8015F8B8 + i) > 99) {
-                                    *(D_8015F8B8 + i) = 99;
-                                }
-                                D_800DC510 = 5;
-                                i = D_8015F8F2[0];
-                                gPlayers[i].unk_00C |= 0x200000;
-                                gPlayers[i].unk_000 |= PLAYER_CPU;
-                                func_800CA118((u8)i);
-                                break;
-                            case 3:
-                                if (currentPosition < 3) {
-                                    *(D_8015F8BC + i * 3 + currentPosition) += 1;
-                                }
-                                if (*(D_8015F8BC + i * 3 + currentPosition) > 99) {
-                                    *(D_8015F8BC + i * 3 + currentPosition) = 99;
-                                }
-                                if (currentPosition == 1) {
-                                    D_800DC510 = 5;
-                                    i = D_8015F8F2[1];
-                                    *(D_8015F8BC + i * 3 + 2) += 1;
-                                    if (*(D_8015F8BC + i * 3 + 2) > 99) {
-                                        *(D_8015F8BC + i * 3 + 2) = 99;
-                                    }
-                                    gPlayers[i].unk_00C |= 0x200000;
-                                    gPlayers[i].unk_000 |= PLAYER_CPU;
-                                    func_800CA118((u8)i);
-                                }
-                                break;
-                            case 4:
-                                if (currentPosition < 3) {
-                                    *(D_8015F8C0 + i * 3 + currentPosition) += 1;
-                                }
-                                if (*(D_8015F8C0 + i * 3 + currentPosition) > 99) {
-                                    *(D_8015F8C0 + i * 3 + currentPosition) = 99;
-                                }
-                                if (currentPosition == 2) {
-                                    D_800DC510 = 5;
-                                    i = D_8015F8F2[2];
-                                    gPlayers[i].unk_00C |= 0x200000;
-                                    gPlayers[i].unk_000 |= PLAYER_CPU;
-                                    func_800CA118((u8)i);
-                                }
-                                break;
-                        }
-
-                    }
-                    #endif
-                // Second lap logic
-                } else if (gPlayers[i].unk_008 == 2) {
-                    if ((gPlayers[i].unk_000 & 0x100) != 0) {
-                        return;
-                    }
-                    if ((D_802BA032 & 0x4000) == 0) {
-                        D_802BA032 |= 0x4000;
-                        func_800CA49C((u8)i);
-                    }
-                }
-            } else if (gPlayers[i].unk_008 == 3) {
-                func_8028EEF0(i);
-                if (gModeSelection == TIME_TRIALS) {
-                    func_80005AE8(ply);
-                }
-            }
-        } 
-    }
-    if ((D_802BA048 != 0) && (D_802BA048 != 100)) {
-        D_802BA048 = 100;
-        func_800074D4();
-    }
+void mp_vs_win(Player *ply, s16 currentPosition, s32 i) {
+    // Potential future MP VS code.
 }
 
 void func_8028F3E8(void) {
@@ -1310,10 +1191,11 @@ void func_8028FCBC(void) {
                 switch(gModeSelection) {
                     case GRAND_PRIX:
                         if (D_80150120 != 0) {
-                            func_8028E678();
+                            //func_8028E678();
                         } else if (D_800DC530 == 0) {
-                            func_80092564();
-                            D_800DC510 = 7;
+                            // Prevents losing in GP mode.
+                            //func_80092564();
+                            //D_800DC510 = 7;
                         } else {
                             func_8028E438();
                         }
