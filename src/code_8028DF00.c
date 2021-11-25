@@ -627,20 +627,20 @@ void func_8028EF28(void) {
             gPlayers[i].unk_008++;
         }
 
-        currentPosition = gPlayers[i].unk_004;
+        
 
         // Player finished the race
         if (gPlayers[i].unk_008 == 3) {
+            func_8028EEF0(i); // Cinematic mode.
+            currentPosition = gPlayers[i].unk_004;
+
+
 
             if ((gPlayers[i].unk_000 & PLAYER_CPU) && ((gPlayers[i].unk_000 & PLAYER_HUMAN) == 0)) {
                 
-                if (currentPosition == 6) {
-                    //gPlayers[0].unk_000 = 0;
+                if (currentPosition >= 6) {
                     D_80150120 = 1;
-                    D_800DC510 = 5;
-                    func_8028E678();
-                } else {
-                    func_8028EEF0(i);
+                    D_800DC510 = 4;
                 }
                 continue;
             }
@@ -672,17 +672,13 @@ void func_8028EF28(void) {
 void mp_gp_win(Player *ply, s16 currentPosition, s32 i) {
 
     // if local player is human
-    if ((i == 0) && (gPlayers[0].unk_000 & PLAYER_HUMAN)) {
+    if ((i == 0) && (gPlayers[0].unk_000 & PLAYER_HUMAN) && (!(gPlayers[i].unk_000 & PLAYER_CPU))) {
         // Set to AI controlled
         gPlayers[0].unk_000 |= PLAYER_CPU;
-        //func_8028EEF0(i);
 
-        if (currentPosition == 7) {
+        if (currentPosition >= 6) {
             D_80150120 = 1;
-            D_800DC510 = 5;
-            func_8028E678();
-        } else {
-            D_800DC510 = 4; 
+            D_800DC510 = 4;
         }
 
         // Finished race sound
@@ -690,6 +686,9 @@ void mp_gp_win(Player *ply, s16 currentPosition, s32 i) {
         if ((D_802BA032 & 0x8000) == 0) {
                 D_802BA032 |= 0x8000;
         }
+    }
+    if (D_800DC510 <= 3) {
+        D_800DC510 = 3;
     }
 
     // Race completed
@@ -711,9 +710,9 @@ void mp_gp_win(Player *ply, s16 currentPosition, s32 i) {
         //return;
     //}
     // Continue racing or done.
-    if (D_800DC510 < 4) {
-        D_800DC510 = 3;
-    }
+    //if (D_800DC510 < 4) {
+    //    D_800DC510 = 3;
+    //}
 }
 
 void mp_vs_win(Player *ply, s16 currentPosition, s32 i) {
@@ -1191,7 +1190,7 @@ void func_8028FCBC(void) {
                 switch(gModeSelection) {
                     case GRAND_PRIX:
                         if (D_80150120 != 0) {
-                            //func_8028E678();
+                            func_8028E678();
                         } else if (D_800DC530 == 0) {
                             // Prevents losing in GP mode.
                             //func_80092564();
